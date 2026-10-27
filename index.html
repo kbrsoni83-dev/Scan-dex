@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050805">
+<title>FLOUX — DEX Scanner</title>
+
+<style>
+:root {
+    --bg: #050805;
+    --panel: #0a100b;
+    --panel2: #0d160e;
+    --green: #39ff70;
+    --green2: #14c94e;
+    --text: #e4f8e8;
+    --muted: #78927e;
+    --border: rgba(57,255,112,.16);
+    --danger: #ff5c68;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Courier New", monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+        radial-gradient(ellipse at 50% -20%, #15331b 0%, transparent 55%),
+        linear-gradient(rgba(57,255,112,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57,255,112,.018) 1px, transparent 1px);
+    background-size: auto, 30px 30px, 30px 30px;
+}
+
+button, input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 3px;
+}
+
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    width: 235px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    background: rgba(5,9,6,.96);
+    padding: 25px 15px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px 28px;
+    border-bottom: 1px solid var(--border);
+}
+
+.brand-icon {
+    width: 39px;
+    height: 39px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-weight: bold;
+    font-size: 23px;
+    box-shadow: 0 0 18px #39ff7020;
+}
+
+.brand h1 {
+    font-size: 23px;
+    letter-spacing: 4px;
+}
+
+.brand p {
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 2px;
+}
+
+.nav-label {
+    color: #52715a;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 25px 10px 12px;
+}
+
+.nav-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: #91aa97;
+    padding: 13px 12px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 5px;
+    font-size: 12px;
+    margin-bottom: 5px;
+    transition: .2s;
+}
+
+.nav-btn:hover,
+.nav-btn.active {
+    color: var(--green);
+    background: #39ff700c;
+    border-color: var(--border);
+}
+
+.nav-icon {
+    width: 18px;
+    text-align: center;
+    font-size: 17px;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+    padding: 14px 10px;
+    border: 1px solid var(--border);
+    background: #39ff7006;
+    border-radius: 5px;
+}
+
+.status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--green);
+}
+
+.dot {
+    width: 7px;
+    height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green);
+}
+
+.sidebar-bottom p {
+    color: var(--muted);
+    font-size: 10px;
+    margin-top: 10px;
+}
+
+/* MAIN */
+
+.main {
+    margin-left: 235px;
+    width: calc(100% - 235px);
+    min-width: 0;
+    padding: 25px 30px 90px;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+}
+
+.breadcrumb {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.breadcrumb span {
+    color: var(--green);
+}
+
+.top-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.version {
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    color: var(--green);
+}
+
+.page {
+    display: none;
+    animation: appear .3s ease;
+}
+
+.page.active {
+    display: block;
+}
+
+@keyframes appear {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.eyebrow {
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 3px;
+    margin-bottom: 13px;
+}
+
+.page-title {
+    font-size: clamp(25px, 4vw, 37px);
+    letter-spacing: -1px;
+    margin-bottom: 10px;
+}
+
+.page-description {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.8;
+    max-width: 650px;
+}
+
+.green {
+    color: var(--green);
+}
+
+/* CARDS */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+    margin: 28px 0;
+}
+
+.card {
+    background: linear-gradient(145deg, #0d160e, #080d09);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 20px;
+    min-width: 0;
+}
+
+.card-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+}
+
+.card-number {
+    font-size: 29px;
+    font-weight: bold;
+    margin: 15px 0 8px;
+    color: var(--green);
+}
+
+.card-foot {
+    font-size: 10px;
+    color: #718d77;
+}
+
+.section {
+    border: 1px solid var(--border);
+    background: rgba(8,14,9,.93);
+    border-radius: 7px;
+    margin-bottom: 22px;
+    overflow: hidden;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 17px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.section-head h3 {
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.section-head small {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.section-body {
+    padding: 20px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-size: 9px;
+    border-radius: 3px;
+}
+
+/* TERMINAL */
+
+.terminal {
+    background: #030604;
+    border: 1px solid #16351d;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.terminal-head {
+    padding: 12px 15px;
+    background: #0a110b;
+    border-bottom: 1px solid #16351d;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.terminal-body {
+    padding: 17px;
+    height: 220px;
+    overflow-y: auto;
+    font-size: 11px;
+    line-height: 1.9;
+}
+
+.log {
+    overflow-wrap: anywhere;
+}
+
+.log::before {
+    content: "> ";
+    color: #4b8c59;
+}
+
+.log.success { color: var(--green); }
+.log.info { color: #a2c5a9; }
+.log.warning { color: #e9c76b; }
+.log.error { color: var(--danger); }
+
+/* BUTTONS */
+
+.btn {
+    padding: 12px 16px;
+    border: 1px solid var(--green);
+    color: var(--green);
+    background: #39ff700a;
+    font-size: 11px;
+    border-radius: 4px;
+    transition: .2s;
+}
+
+.btn:hover {
+    background: var(--green);
+    color: #031006;
+    box-shadow: 0 0 18px #39ff7025;
+}
+
+.btn.primary {
+    background: var(--green);
+    color: #031006;
+    font-weight: bold;
+}
+
+.btn.primary:hover {
+    background: #8dffaa;
+}
+
+.btn.danger {
+    border-color: #ff5c6850;
+    color: var(--danger);
+}
+
+.btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+/* FILE UPLOAD */
+
+.upload-box {
+    border: 1px dashed #285a33;
+    background: #39ff7004;
+    padding: 30px 15px;
+    text-align: center;
+    border-radius: 5px;
+    transition: .2s;
+}
+
+.upload-box.dragover {
+    background: #39ff7010;
+    border-color: var(--green);
+}
+
+.upload-symbol {
+    font-size: 28px;
+    color: var(--green);
+    margin-bottom: 15px;
+}
+
+.upload-box h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.upload-box p {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+/* PROGRESS */
+
+.progress {
+    height: 4px;
+    background: #17251a;
+    margin-top: 15px;
+    overflow: hidden;
+    border-radius: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0;
+    background: var(--green);
+    transition: width .2s;
+    box-shadow: 0 0 10px var(--green);
+}
+
+/* SEARCH */
+
+.search {
+    width: 100%;
+    background: #050a06;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    padding: 13px;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 11px;
+}
+
+th {
+    color: var(--muted);
+    font-weight: normal;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+td {
+    padding: 13px 15px;
+    border-bottom: 1px solid #ffffff08;
+    overflow-wrap: anywhere;
+}
+
+tr:last-child td {
+    border-bottom: 0;
+}
+
+td.hit {
+    color: var(--green);
+}
+
+.empty {
+    text-align: center;
+    padding: 35px 15px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* KEYWORD GRID */
+
+.keyword-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.keyword-item {
+    padding: 10px;
+    background: #080f09;
+    border: 1px solid #17271a;
+    color: #b6d4bc;
+    font-size: 10px;
+    overflow-wrap: anywhere;
+}
+
+.keyword-item.found {
+    color: var(--green);
+    border-color: #39ff7050;
+    background: #39ff700b;
+}
+
+/* HISTORY */
+
+.history-item {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    font-size: 11px;
+}
+
+.history-item:last-child {
+    border: 0;
+}
+
+.history-item small {
+    color: var(--muted);
+    display: block;
+    margin-top: 6px;
+}
+
+/* MOBILE */
+
+.mobile-menu {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--green);
+    padding: 8px 11px;
+}
+
+.bottom-nav {
+    display: none;
+}
+
+.footer {
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: #5d7863;
+    font-size: 10px;
+    line-height: 1.8;
+    text-align: center;
+}
+
+@media(max-width:1050px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .keyword-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .main { padding: 22px 20px 90px; }
+}
+
+@media(max-width:700px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+        box-shadow: 10px 0 40px #0008;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main {
+        margin-left: 0;
+        width: 100%;
+        padding: 17px 14px 100px;
+    }
+
+    .topbar {
+        margin-bottom: 25px;
+        padding-bottom: 17px;
+    }
+
+    .mobile-menu { display: block; }
+    .top-right { gap: 8px; }
+    .top-right .version { display: none; }
+    .page-title { font-size: 27px; }
+    .card { padding: 15px; }
+    .card-number { font-size: 24px; }
+    .section-body { padding: 14px; }
+    .keyword-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 30;
+        background: rgba(5,9,6,.97);
+        border-top: 1px solid var(--border);
+        padding: 9px 5px calc(9px + env(safe-area-inset-bottom));
+        justify-content: space-around;
+        backdrop-filter: blur(15px);
+    }
+
+    .bottom-nav button {
+        flex: 1;
+        background: transparent;
+        border: 0;
+        color: var(--muted);
+        padding: 7px 3px;
+        font-size: 10px;
+    }
+
+    .bottom-nav button.active { color: var(--green); }
+    .bottom-nav span {
+        display: block;
+        font-size: 17px;
+        margin-bottom: 5px;
+    }
+}
+
+@media(max-width:360px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .card-number { font-size: 21px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+
+    <div class="brand">
+        <div class="brand-icon">F</div>
+        <div>
+            <h1>FLOUX</h1>
+            <p>DEX INTELLIGENCE</p>
+        </div>
+    </div>
+
+    <div class="nav-label">WORKSPACE</div>
+
+    <button class="nav-btn active" data-page="dashboard">
+        <span class="nav-icon">⌂</span> Dashboard
+    </button>
+
+    <button class="nav-btn" data-page="scanner">
+        <span class="nav-icon">⌕</span> DEX Scanner
+    </button>
+
+    <button class="nav-btn" data-page="keywords">
+        <span class="nav-icon">⌘</span> Keyword Database
+    </button>
+
+    <button class="nav-btn" data-page="history">
+        <span class="nav-icon">▤</span> Scan History
+    </button>
+
+    <div class="nav-label">SYSTEM</div>
+
+    <button class="nav-btn" data-page="terminal">
+        <span class="nav-icon">$_</span> Terminal
+    </button>
+
+    <button class="nav-btn" data-page="about">
+        <span class="nav-icon">ⓘ</span> About FLOUX
+    </button>
+
+    <div class="sidebar-bottom">
+        <div class="status-line">
+            <span class="dot"></span>
+            LOCAL SYSTEM READY
+        </div>
+        <p>FLOUX SCANNER v1.0.0</p>
+    </div>
+
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+    <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+            <button class="mobile-menu" id="menuToggle">☰</button>
+            <div class="breadcrumb">
+                FLOUX / <span id="breadcrumb">Dashboard</span>
+            </div>
+        </div>
+
+        <div class="top-right">
+            <span id="clock">00:00:00</span>
+            <span class="version">V1.0.0</span>
+        </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section class="page active" id="dashboard">
+
+        <div class="eyebrow">SYSTEM OVERVIEW / 01</div>
+
+        <h2 class="page-title">
+            DEX <span class="green">INTELLIGENCE</span>
+        </h2>
+
+        <p class="page-description">
+            Analisis file DEX secara lokal. Unggah file yang kamu miliki,
+            cari keyword, dan tinjau hasil pemeriksaan dalam satu dashboard.
+        </p>
+
+        <div class="stats">
+
+            <div class="card">
+                <div class="card-label">FILES LOADED</div>
+                <div class="card-number" id="statFiles">00</div>
+                <div class="card-foot">File dalam sesi ini</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">KEYWORDS</div>
+                <div class="card-number">111</div>
+                <div class="card-foot">Referensi pencarian</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">MATCHES</div>
+                <div class="card-number" id="statMatches">00</div>
+                <div class="card-foot">Kecocokan teks</div>
+            </div>
+
+            <div class="card">
+                <div class="card-label">SCANS</div>
+                <div class="card-number" id="statScans">00</div>
+                <div class="card-foot">Sesi pemindaian</div>
+            </div>
+
+        </div>
+
+        <div class="section">
+            <div class="section-head">
+                <h3>QUICK SCANNER</h3>
+                <span class="badge">LOCAL ANALYSIS</span>
+            </div>
+
+            <div class="section-body">
+
+                <div class="upload-box" id="uploadBox">
+                    <div class="upload-symbol">[ + ]</div>
+
+                    <h3>Upload DEX / APK</h3>
+
+                    <p>
+                        Pilih classes.dex hingga classes6.dex atau APK.<br>
+                        File diproses secara lokal oleh browser.
+                    </p>
+
+                    <div class="btn-row" style="justify-content:center">
+                        <button class="btn primary" id="chooseFile">
+                            SELECT FILE
+                        </button>
+                    </div>
+
+                    <input
+                        type="file"
+                        id="fileInput"
+                        accept=".dex,.apk,.txt,.smali"
+                        multiple
+                    >
+                </div>
+
+                <div id="fileInfo" style="margin-top:15px;font-size:11px;color:var(--muted)">
+                    Belum ada file yang dipilih.
+                </div>
+
+                <div class="progress">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn primary" id="scanBtn">
+                        START SCAN
+                    </button>
+
+                    <button class="btn" id="clearBtn">
+                        CLEAR SESSION
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-head">
+                <h3>SYSTEM CONSOLE</h3>
+                <small>LIVE OUTPUT</small>
+            </div>
+
+            <div class="terminal">
+                <div class="terminal-head">
+                    <span>floux@local:~</span>
+                    <span id="terminalStatus">READY</span>
+                </div>
+
+                <div class="terminal-body" id="consoleOutput">
+                    <div class="log success">FLOUX DEX Scanner initialized.</div>
+                    <div class="log info">Browser-local analysis engine ready.</div>
+                    <div class="log info">Waiting for input files...</div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- SCANNER -->
+    <section class="page" id="scanner">
+
+        <div class="eyebrow">FILE ANALYSIS / 02</div>
+        <h2 class="page-title">DEX <span class="green">SCANNER</span></h2>
+
+        <p class="page-description">
+            Pilih file, jalankan pemeriksaan, lalu tinjau kecocokan keyword
+            yang ditemukan dalam teks yang dapat dibaca.
+        </p>
+
+        <div class="stats">
+            <div class="card">
+                <div class="card-label">SELECTED FILES</div>
+                <div class="card-number" id="scanFileCount">0</div>
+            </div>
+            <div class="card">
+                <div class="card-label">MATCHED TERMS</div>
+                <div class="card-number" id="scanMatchCount">0</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-head">
+                <h3>INPUT FILES</h3>
+                <span class="badge">DEX / APK / TEXT</span>
+            </div>
+
+            <div class="section-body">
+                <p class="page-description" style="margin-bottom:15px">
+                    File biner DEX dapat berisi data yang tidak terbaca sebagai
+                    teks biasa. Untuk analisis kode lengkap, gunakan alat
+                    dekompilasi yang sesuai pada aplikasi milikmu.
+                </p>
+
+                <button class="btn" id="chooseFile2">+ ADD FILES</button>
+
+                <div id="scannerFiles" style="margin-top:20px"></div>
+
+                <div class="btn-row">
+                    <button class="btn primary" id="scanBtn2">RUN ANALYSIS</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-head">
+                <h3>DETECTION RESULTS</h3>
+                <span class="badge" id="resultBadge">NO RESULTS</span>
+            </div>
+
+            <div class="section-body">
+                <input
+                    class="search"
+                    id="resultSearch"
+                    placeholder="Filter hasil keyword..."
+                >
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>KEYWORD</th>
+                                <th>FILE</th>
+                                <th>COUNT</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="resultsBody">
+                            <tr>
+                                <td colspan="4" class="empty">
+                                    Belum ada hasil analisis.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- KEYWORDS -->
+    <section class="page" id="keywords">
+
+        <div class="eyebrow">REFERENCE DATABASE / 03</div>
+        <h2 class="page-title">KEYWORD <span class="green">DATABASE</span></h2>
+
+        <p class="page-description">
+            Daftar 111 keyword untuk audit kode. Keberadaan keyword saja
+            tidak membuktikan status akun, validasi lisensi, atau celah keamanan.
+        </p>
+
+        <div class="stats">
+            <div class="card">
+                <div class="card-label">TOTAL KEYWORDS</div>
+                <div class="card-number">111</div>
+            </div>
+            <div class="card">
+                <div class="card-label">FOUND IN CURRENT SCAN</div>
+                <div class="card-number" id="keywordFoundCount">0</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-head">
+                <h3>SEARCH DATABASE</h3>
+                <span class="badge">KEYWORD INDEX</span>
+            </div>
+
+            <div class="section-body">
+                <input
+                    class="search"
+                    id="keywordSearch"
+                    placeholder="Cari keyword..."
+                >
+
+                <div class="keyword-grid" id="keywordGrid"></div>
+
+                <div class="btn-row">
+                    <button class="btn" id="exportKeywords">
+                        EXPORT DATABASE
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- HISTORY -->
+    <section class="page" id="history">
+
+        <div class="eyebrow">ACTIVITY LOG / 04</div>
+        <h2 class="page-title">SCAN <span class="green">HISTORY</span></h2>
+
+        <p class="page-description">
+            Riwayat pemindaian selama sesi browser ini.
+        </p>
+
+        <div class="section" style="margin-top:25px">
+            <div class="section-head">
+                <h3>RECENT ACTIVITY</h3>
+                <button class="btn danger" id="clearHistory">CLEAR</button>
+            </div>
+
+            <div class="section-body" id="historyList">
+                <div class="empty">Belum ada aktivitas.</div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- TERMINAL -->
+    <section class="page" id="terminal">
+
+        <div class="eyebrow">COMMAND INTERFACE / 05</div>
+        <h2 class="page-title">SYSTEM <span class="green">TERMINAL</span></h2>
+
+        <p class="page-description">
+            Terminal simulasi untuk melihat status dan aktivitas scanner.
+            Perintah di sini tidak menjalankan shell sistem operasi.
+        </p>
+
+        <div class="section" style="margin-top:25px">
+            <div class="section-head">
+                <h3>FLOUX CONSOLE</h3>
+                <span class="badge">SIMULATED SHELL</span>
+            </div>
+
+            <div class="terminal">
+                <div class="terminal-head">
+                    <span>floux@browser:~</span>
+                    <span>LOCAL</span>
+                </div>
+
+                <div class="terminal-body" id="interactiveConsole">
+                    <div class="log success">FLOUX terminal online.</div>
+                    <div class="log info">Type help to see available commands.</div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:12px">
+                <span class="green" style="padding-top:12px">$</span>
+                <input
+                    class="search"
+                    id="commandInput"
+                    style="margin:0"
+                    placeholder="help"
+                    autocomplete="off"
+                >
+                <button class="btn primary" id="runCommand">RUN</button>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- ABOUT -->
+    <section class="page" id="about">
+
+        <div class="eyebrow">INFORMATION / 06</div>
+        <h2 class="page-title">ABOUT <span class="green">FLOUX</span></h2>
+
+        <p class="page-description">
+            FLOUX adalah antarmuka pemeriksaan file dan referensi keyword
+            yang berjalan langsung di browser.
+        </p>
+
+        <div class="section" style="margin-top:25px">
+            <div class="section-head">
+                <h3>SYSTEM INFORMATION</h3>
+            </div>
+
+            <div class="section-body" style="line-height:2.5;font-size:12px">
+                <div>Application <span class="green">FLOUX DEX SCANNER</span></div>
+                <div>Version <span class="green">1.0.0</span></div>
+                <div>Engine <span class="green">JavaScript Browser API</span></div>
+                <div>Processing <span class="green">Local session</span></div>
+                <div>Keyword database <span class="green">111 entries</span></div>
+                <div>Network upload <span class="green">Not implemented</span></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-head">
+                <h3>IMPORTANT NOTES</h3>
+            </div>
+
+            <div class="section-body">
+                <p class="page-description">
+                    Scanner ini melakukan pencarian teks, bukan dekompilasi
+                    penuh bytecode DEX. File APK dengan beberapa DEX belum
+                    otomatis diekstrak oleh versi ini. Hasil yang kosong
+                    tidak berarti keyword tidak ada dalam bytecode.
+                </p>
+            </div>
+        </div>
+
+    </section>
+
+    <footer class="footer">
+        FLOUX DEX INTELLIGENCE · LOCAL ANALYSIS INTERFACE<br>
+        Built for authorized application auditing.
+    </footer>
+
+</main>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="bottom-nav">
+    <button class="active" data-page="dashboard">
+        <span>⌂</span>Home
+    </button>
+    <button data-page="scanner">
+        <span>⌕</span>Scanner
+    </button>
+    <button data-page="keywords">
+        <span>⌘</span>Keywords
+    </button>
+    <button data-page="history">
+        <span>▤</span>History
+    </button>
+</nav>
+
+<script>
+"use strict";
+
+/* =====================================================
+   FLOUX DEX SCANNER
+   Browser-local text keyword analysis
+===================================================== */
+
+const KEYWORDS = [
+"isactive","is_active","isuser","is_user","ismember","is_member",
+"ispremiumuser","is_premium_user","isvipmember","is_vip_member",
+"hasaccess","has_access","isvalid","is_valid","purchased","purchase_done",
+"premiumaccess","premium_access","isregistered","is_registered",
+"renewsubscription","renew_subscription","member_since","subscribed",
+"subscription_status","haspremium","has_premium","isactivated","is_activated",
+"iseligible","is_eligible","unlockpremium","unlock_premium","isunlocked",
+"is_unlocked","ispaid","is_paid","adfree","ad_free","isadfree","is_ad_free",
+"isgift","is_gift","giftuser","gift_user","isgifted","is_gifted","hasgift",
+"has_gift","premiumuser","premium_user","ispremium","is_premium","isvip",
+"is_vip","ispro","is_pro","isactiveuser","is_active_user","ismemberuser",
+"is_member_user","isloyal","is_loyal","loyaltystatus","loyalty_status",
+"isloyaluser","is_loyal_user","hasloyalty","has_loyalty","loyaltypoints",
+"loyalty_points","haspoints","has_points","pointbalance","point_balance",
+"bonususer","bonus_user","isbonus","is_bonus","bonusactive","bonus_active",
+"isbonususer","is_bonus_user","hasbonus","has_bonus","istrial","is_trial",
+"trialuser","trial_user","istrialuser","is_trial_user","trialexpired",
+"trial_expired","isexpired","is_expired","isrenewed","is_renewed",
+"renewactive","renew_active","hasrenewed","has_renewed","ispremiumaccess",
+"is_premium_access","premiumstatus","premium_status","ispremiumuseractive",
+"is_premium_user_active","active_subscription","active_subscription_user",
+"isactivepremium","is_active_premium"
+];
+
+const state = {
+    files: [],
+    results: [],
+    history: [],
+    scans: 0
+};
+
+const $ = id => document.getElementById(id);
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+/* NAVIGATION */
+
+function navigate(page) {
+    document.querySelectorAll(".page").forEach(el => {
+        el.classList.toggle("active", el.id === page);
+    });
+
+    document.querySelectorAll("[data-page]").forEach(el => {
+        el.classList.toggle("active", el.dataset.page === page);
+    });
+
+    const active = document.querySelector(
+        '.sidebar [data-page="' + page + '"]'
+    );
+
+    $("breadcrumb").textContent = active
+        ? active.textContent.trim()
+        : page;
+
+    $("sidebar").classList.remove("open");
+
+    if (page === "scanner") renderFiles();
+    if (page === "history") renderHistory();
+    if (page === "keywords") renderKeywords();
+}
+
+document.querySelectorAll("[data-page]").forEach(button => {
+    button.addEventListener("click", () => navigate(button.dataset.page));
+});
+
+$("menuToggle").addEventListener("click", () => {
+    $("sidebar").classList.toggle("open");
+});
+
+/* CLOCK */
+
+function updateClock() {
+    $("clock").textContent = new Date().toLocaleTimeString("id-ID", {
+        hour12: false
+    });
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+/* CONSOLE */
+
+function addLog(message, type = "info", target = "consoleOutput") {
+    const output = $(target);
+    const line = document.createElement("div");
+
+    line.className = "log " + type;
+    line.textContent = message;
+
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+
+    while (output.children.length > 150) {
+        output.removeChild(output.firstChild);
+    }
+}
+
+/* FILE SELECTION */
+
+$("chooseFile").addEventListener("click", () => $("fileInput").click());
+$("chooseFile2").addEventListener("click", () => $("fileInput").click());
+
+$("fileInput").addEventListener("change", event => {
+    addFiles(Array.from(event.target.files || []));
+    event.target.value = "";
+});
+
+const uploadBox = $("uploadBox");
+
+uploadBox.addEventListener("dragover", event => {
+    event.preventDefault();
+    uploadBox.classList.add("dragover");
+});
+
+uploadBox.addEventListener("dragleave", () => {
+    uploadBox.classList.remove("dragover");
+});
+
+uploadBox.addEventListener("drop", event => {
+    event.preventDefault();
+    uploadBox.classList.remove("dragover");
+    addFiles(Array.from(event.dataTransfer.files || []));
+});
+
+function addFiles(files) {
+    const allowed = /\.(dex|apk|txt|smali)$/i;
+    let added = 0;
+
+    for (const file of files) {
+        if (!allowed.test(file.name)) {
+            addLog("Unsupported file: " + file.name, "warning");
+            continue;
+        }
+
+        if (state.files.some(item =>
+            item.name === file.name &&
+            item.size === file.size &&
+            item.lastModified === file.lastModified
+        )) {
+            addLog("File already selected: " + file.name, "warning");
+            continue;
+        }
+
+        state.files.push(file);
+        added++;
+        addLog("Loaded: " + file.name, "success");
+    }
+
+    if (added) {
+        $("fileInfo").textContent =
+            state.files.length + " file(s) selected.";
+
+        renderFiles();
+        updateStats();
+    }
+}
+
+function renderFiles() {
+    $("scannerFiles").innerHTML = "";
+
+    $("scanFileCount").textContent = state.files.length;
+
+    if (!state.files.length) {
+        $("scannerFiles").innerHTML =
+            '<div class="empty">Belum ada file yang dipilih.</div>';
+        return;
+    }
+
+    state.files.forEach(file => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+
+        const size = file.size < 1024 * 1024
+            ? (file.size / 1024).toFixed(1) + " KB"
+            : (file.size / 1024 / 1024).toFixed(2) + " MB";
+
+        const name = document.createElement("div");
+        name.innerHTML =
+            '<span class="green">' + escapeHTML(file.name) + '</span>' +
+            '<small>' + size + '</small>';
+
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = file.name.toLowerCase().endsWith(".apk")
+            ? "APK"
+            : file.name.toLowerCase().endsWith(".dex")
+                ? "DEX"
+                : "TEXT";
+
+        item.append(name, badge);
+        $("scannerFiles").appendChild(item);
+    });
+}
+
+/* KEYWORD DATABASE */
+
+function renderKeywords(filter = "") {
+    const grid = $("keywordGrid");
+    grid.innerHTML = "";
+
+    const query = filter.toLowerCase();
+
+    const foundSet = new Set(
+        state.results.map(result => result.keyword)
+    );
+
+    let visible = 0;
+
+    KEYWORDS.forEach((keyword, index) => {
+        if (!keyword.includes(query)) return;
+
+        visible++;
+
+        const item = document.createElement("div");
+        item.className = "keyword-item" +
+            (foundSet.has(keyword) ? " found" : "");
+
+        item.textContent =
+            String(index + 1).padStart(3, "0") + "  " + keyword;
+
+        grid.appendChild(item);
+    });
+
+    if (!visible) {
+        grid.innerHTML =
+            '<div class="empty">Keyword tidak ditemukan.</div>';
+    }
+
+    $("keywordFoundCount").textContent = foundSet.size;
+}
+
+$("keywordSearch").addEventListener("input", event => {
+    renderKeywords(event.target.value);
+});
+
+$("exportKeywords").addEventListener("click", () => {
+    downloadText(
+        "floux-keywords.txt",
+        KEYWORDS.map((word, index) =>
+            (index + 1) + ". " + word
+        ).join("\n")
+    );
+});
+
+/* SCANNING */
+
+$("scanBtn").addEventListener("click", runScan);
+$("scanBtn2").addEventListener("click", runScan);
+
+let scanRunning = false;
+
+async function runScan() {
+    if (scanRunning) return;
+
+    if (!state.files.length) {
+        addLog("Select at least one file before scanning.", "warning");
+        navigate("scanner");
+        return;
+    }
+
+    scanRunning = true;
+
+    $("scanBtn").disabled = true;
+    $("scanBtn2").disabled = true;
+
+    $("terminalStatus").textContent = "SCANNING";
+    $("progressFill").style.width = "0%";
+
+    addLog("Starting local text analysis...", "info");
+
+    const allResults = [];
+    const total = state.files.length;
+
+    try {
+        for (let index = 0; index < total; index++) {
+            const file = state.files[index];
+
+            addLog("Reading " + file.name, "info");
+
+            /*
+              Large files are limited to prevent excessive
+              browser memory usage. APK archives are not
+              extracted or decompressed in this version.
+            */
+
+            const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+            if (file.size > MAX_FILE_SIZE) {
+                addLog(
+                    file.name + " exceeds the 20 MB scan limit.",
+                    "warning"
+                );
+
+                $("progressFill").style.width =
+                    Math.round((index + 1) / total * 100) + "%";
+
+                continue;
+            }
+
+            const buffer = await file.arrayBuffer();
+
+            let textContent;
+
+            if (file.name.toLowerCase().endsWith(".apk")) {
+                addLog(
+                    file.name +
+                    ": APK archive is not extracted; raw text search only.",
+                    "warning"
+                );
+            }
+
+            textContent = new TextDecoder(
+                "utf-8",
+                { fatal: false }
+            ).decode(buffer).toLowerCase();
+
+            for (const keyword of KEYWORDS) {
+                let count = 0;
+                let position = 0;
+
+                while ((position = textContent.indexOf(
+                    keyword,
+                    position
+                )) !== -1) {
+                    count++;
+                    position += keyword.length;
+                }
+
+                if (count > 0) {
+                    allResults.push({
+                        keyword,
+                        file: file.name,
+                        count
+                    });
+                }
+            }
+
+            $("progressFill").style.width =
+                Math.round((index + 1) / total * 100) + "%";
+
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        state.results = allResults;
+        state.scans++;
+
+        const matchedKeywords = new Set(
+            allResults.map(result => result.keyword)
+        ).size;
+
+        addLog(
+            "Analysis finished. " +
+            allResults.length + " file-keyword match records.",
+            "success"
+        );
+
+        addLog(
+            "Unique matched keywords: " + matchedKeywords,
+            "success"
+        );
+
+        addHistory({
+            date: new Date().toLocaleString("id-ID"),
+            files: total,
+            matches: allResults.length,
+            keywords: matchedKeywords
+        });
+
+        renderResults();
+        renderKeywords($("keywordSearch").value);
+        updateStats();
+
+        $("resultBadge").textContent =
+            allResults.length + " MATCH RECORDS";
+
+        $("scanMatchCount").textContent = allResults.length;
+
+        navigate("scanner");
+
+    } catch (error) {
+        addLog(
+            "Scan error: " + (error.message || "Unknown error"),
+            "error"
+        );
+    } finally {
+        scanRunning = false;
+        $("scanBtn").disabled = false;
+        $("scanBtn2").disabled = false;
+        $("terminalStatus").textContent = "READY";
+    }
+}
+
+/* RESULTS TABLE */
+
+function renderResults(filter = "") {
+    const body = $("resultsBody");
+    body.innerHTML = "";
+
+    const query = filter.toLowerCase();
+
+    const filtered = state.results.filter(result =>
+        result.keyword.includes(query) ||
+        result.file.toLowerCase().includes(query)
+    );
+
+    if (!filtered.length) {
+        body.innerHTML =
+            '<tr><td colspan="4" class="empty">' +
+            'Tidak ada hasil yang cocok.' +
+            '</td></tr>';
+        return;
+    }
+
+    filtered.forEach(result => {
+        const row = document.createElement("tr");
+
+        const values = [
+            result.keyword,
+            result.file,
+            result.count,
+            "TEXT MATCH"
+        ];
+
+        values.forEach((value, index) => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+
+            if (index === 0) cell.className = "hit";
+            if (index === 3) {
+                cell.innerHTML = '<span class="badge">MATCH</span>';
+            }
+
+            row.appendChild(cell);
+        });
+
+        body.appendChild(row);
+    });
+}
+
+$("resultSearch").addEventListener("input", event => {
+    renderResults(event.target.value);
+});
+
+/* STATISTICS */
+
+function updateStats() {
+    $("statFiles").textContent =
+        String(state.files.length).padStart(2, "0");
+
+    $("statMatches").textContent =
+        String(state.results.length).padStart(2, "0");
+
+    $("statScans").textContent =
+        String(state.scans).padStart(2, "0");
+
+    $("scanFileCount").textContent = state.files.length;
+    $("scanMatchCount").textContent = state.results.length;
+}
+
+/* HISTORY */
+
+function addHistory(item) {
+    state.history.unshift(item);
+
+    if (state.history.length > 100) {
+        state.history.pop();
+    }
+
+    renderHistory();
+}
+
+function renderHistory() {
+    const list = $("historyList");
+    list.innerHTML = "";
+
+    if (!state.history.length) {
+        list.innerHTML =
+            '<div class="empty">Belum ada aktivitas.</div>';
+        return;
+    }
+
+    state.history.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+
+        const info = document.createElement("div");
+        info.innerHTML =
+            '<span class="green">SCAN COMPLETED</span>' +
+            '<small>' + escapeHTML(item.date) + '</small>';
+
+        const stats = document.createElement("div");
+        stats.style.textAlign = "right";
+        stats.textContent = item.matches + " matches";
+
+        const small = document.createElement("small");
+        small.textContent = item.files + " file(s)";
+        stats.appendChild(small);
+
+        row.append(info, stats);
+        list.appendChild(row);
+    });
+}
+
+$("clearHistory").addEventListener("click", () => {
+    state.history = [];
+    renderHistory();
+    addLog("Scan history cleared.", "warning");
+});
+
+/* CLEAR SESSION */
+
+$("clearBtn").addEventListener("click", () => {
+    if (scanRunning) return;
+
+    state.files = [];
+    state.results = [];
+    state.history = [];
+    state.scans = 0;
+
+    $("fileInfo").textContent = "Belum ada file yang dipilih.";
+    $("progressFill").style.width = "0%";
+    $("resultBadge").textContent = "NO RESULTS";
+    $("resultsBody").innerHTML =
+        '<tr><td colspan="4" class="empty">' +
+        'Belum ada hasil analisis.' +
+        '</td></tr>';
+
+    $("consoleOutput").innerHTML = "";
+
+    addLog("Session cleared.", "success");
+
+    renderFiles();
+    renderKeywords();
+    renderHistory();
+    updateStats();
+});
+
+/* DOWNLOAD HELPER */
+
+function downloadText(filename, content) {
+    const blob = new Blob(
+        [content],
+        { type: "text/plain;charset=utf-8" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* SIMULATED TERMINAL */
+
+function runTerminalCommand() {
+    const input = $("commandInput");
+    const command = input.value.trim().toLowerCase();
+
+    if (!command) return;
+
+    addLog("$ " + command, "success", "interactiveConsole");
+
+    switch (command) {
+        case "help":
+            addLog("Available commands:", "info", "interactiveConsole");
+            addLog("help - show commands", "info", "interactiveConsole");
+            addLog("status - show session status", "info", "interactiveConsole");
+            addLog("files - list selected files", "info", "interactiveConsole");
+            addLog("keywords - count reference keywords", "info", "interactiveConsole");
+            addLog("scan - navigate to scanner", "info", "interactiveConsole");
+            addLog("clear - clear terminal output", "info", "interactiveConsole");
+            break;
+
+        case "status":
+            addLog(
+                "Files: " + state.files.length +
+                " | Scans: " + state.scans +
+                " | Matches: " + state.results.length,
+                "success",
+                "interactiveConsole"
+            );
+            break;
+
+        case "files":
+            if (!state.files.length) {
+                addLog("No files selected.", "warning", "interactiveConsole");
+            } else {
+                state.files.forEach(file => {
+                    addLog(file.name, "info", "interactiveConsole");
+                });
+            }
+            break;
+
+        case "keywords":
+            addLog(
+                "Keyword database: " + KEYWORDS.length + " terms.",
+                "success",
+                "interactiveConsole"
+            );
+            break;
+
+        case "scan":
+            navigate("scanner");
+            addLog(
+                "Scanner opened. Use RUN ANALYSIS to begin.",
+                "info",
+                "interactiveConsole"
+            );
+            break;
+
+        case "clear":
+            $("interactiveConsole").innerHTML = "";
+            break;
+
+        default:
+            addLog(
+                "Unknown command. Type help.",
+                "warning",
+                "interactiveConsole"
+            );
+    }
+
+    input.value = "";
+}
+
+$("runCommand").addEventListener("click", runTerminalCommand);
+
+$("commandInput").addEventListener("keydown", event => {
+    if (event.key === "Enter") runTerminalCommand();
+});
+
+/* INITIALIZE */
+
+renderKeywords();
+renderFiles();
+renderHistory();
+updateStats();
+
+addLog("Loaded " + KEYWORDS.length + " reference keywords.", "success");
+
+</script>
+</body>
+</html>
